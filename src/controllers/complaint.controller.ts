@@ -32,54 +32,59 @@ export class ComplaintController {
 				throw new AppError("Authentication required", 401)
 			}
 
-			const { description, latitude, longitude, address } = req.body
-
-			// For now, we set default category, department, and severity
-			// Later AI will classify these
-			const category = ComplaintType.OTHER
-			const department = getDepartmentByComplaintType(category)
-			const severity = getSeverityByComplaintType(category)
-
-			// Create complaint with GeoJSON format
-			const complaint = await Complaint.create({
-				userId: req.user._id,
-				description,
-				location: {
-					type: "Point",
-					coordinates: [longitude, latitude], // GeoJSON: [lng, lat]
-					address: address || null,
-				},
-				category,
-				severity,
-				department,
-				status: ComplaintStatus.PENDING,
-			})
-
-			logger.info(`Complaint created: ${complaint._id} by user: ${req.user.username}`)
-
-			const response: IComplaintResponse = {
-				_id: complaint._id.toString(),
-				userId: complaint.userId,
-				description: complaint.description,
-				imageUrl: complaint.imageUrl,
-				location: complaint.location,
-				category: complaint.category,
-				severity: complaint.severity,
-				department: complaint.department,
-				status: complaint.status,
-				createdAt: complaint.createdAt,
-				updatedAt: complaint.updatedAt,
-				resolvedAt: complaint.resolvedAt,
-			}
-
-			res.status(201).json({
-				status: "success",
-				message: "Complaint created successfully",
-				data: response,
-			})
-		} catch (error) {
-			next(error)
+		// Only normal users can create complaints, not admins
+		if (req.user.role === "admin") {
+			throw new AppError("Admins cannot create complaints", 403)
 		}
+
+		const { description, latitude, longitude, address } = req.body
+
+		// For now, we set default category, department, and severity
+		// Later AI will classify these
+		const category = ComplaintType.OTHER
+		const department = getDepartmentByComplaintType(category)
+		const severity = getSeverityByComplaintType(category)
+
+		// Create complaint with GeoJSON format
+		const complaint = await Complaint.create({
+			userId: req.user._id.toString(),
+			description,
+			location: {
+				type: "Point",
+				coordinates: [longitude, latitude], // GeoJSON: [lng, lat]
+				address: address || null,
+			},
+			category,
+			severity,
+			department,
+		status: ComplaintStatus.PENDING,
+	})
+
+	logger.info(`Complaint created: ${complaint._id} by user: ${req.user.username}`)
+
+	const response: IComplaintResponse = {
+		_id: complaint._id.toString(),
+		userId: complaint.userId,
+		description: complaint.description,
+		imageUrl: complaint.imageUrl,
+		location: complaint.location,
+		category: complaint.category,
+		severity: complaint.severity,
+		department: complaint.department,
+		status: complaint.status,
+		createdAt: complaint.createdAt,
+		updatedAt: complaint.updatedAt,
+		resolvedAt: complaint.resolvedAt,
+	}
+
+	res.status(201).json({
+		status: "success",
+		message: "Complaint created successfully",
+		data: response,
+	})
+} catch (error) {
+	next(error)
+}
 	}
 
 	/**
