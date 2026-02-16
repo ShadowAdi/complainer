@@ -163,49 +163,39 @@ export async function classifyComplaintWithAI(
 }
 
 /**
- * Normalize AI response by converting display values to enum keys if needed
+ * Normalize AI response by converting enum keys to enum values
  */
 function normalizeClassification(classification: any): AIClassificationResult {
-	// Try to find matching enum key for category
-	let category = classification.category as ComplaintType
-	if (!isValidComplaintType(category)) {
-		// Try to find by display value
-		const categoryEntry = Object.entries(ComplaintType).find(
-			([_, value]) => value === classification.category
-		)
-		if (categoryEntry) {
-			category = categoryEntry[0] as ComplaintType
-		} else {
-			category = ComplaintType.OTHER
-		}
+	// Convert enum keys to enum values if needed
+	let category: ComplaintType
+	if (Object.keys(ComplaintType).includes(classification.category)) {
+		// AI returned enum key (e.g., "ROAD_DAMAGE"), convert to enum value
+		category = ComplaintType[classification.category as keyof typeof ComplaintType]
+	} else if (Object.values(ComplaintType).includes(classification.category)) {
+		// AI returned enum value directly (e.g., "Road Damage/Potholes")
+		category = classification.category as ComplaintType
+	} else {
+		category = ComplaintType.OTHER
 	}
 
-	// Try to find matching enum key for severity
-	let severity = classification.severity as ComplaintSeverity
-	if (!isValidSeverity(severity)) {
-		// Try to find by display value
-		const severityEntry = Object.entries(ComplaintSeverity).find(
-			([_, value]) => value === classification.severity
-		)
-		if (severityEntry) {
-			severity = severityEntry[0] as ComplaintSeverity
-		} else {
-			severity = ComplaintSeverity.MEDIUM
-		}
+	// Convert enum keys to enum values for severity
+	let severity: ComplaintSeverity
+	if (Object.keys(ComplaintSeverity).includes(classification.severity)) {
+		severity = ComplaintSeverity[classification.severity as keyof typeof ComplaintSeverity]
+	} else if (Object.values(ComplaintSeverity).includes(classification.severity)) {
+		severity = classification.severity as ComplaintSeverity
+	} else {
+		severity = ComplaintSeverity.MEDIUM
 	}
 
-	// Try to find matching enum key for department
-	let department = classification.department as GovernmentDepartment
-	if (!isValidDepartment(department)) {
-		// Try to find by display value
-		const departmentEntry = Object.entries(GovernmentDepartment).find(
-			([_, value]) => value === classification.department
-		)
-		if (departmentEntry) {
-			department = departmentEntry[0] as GovernmentDepartment
-		} else {
-			department = GovernmentDepartment.OTHER
-		}
+	// Convert enum keys to enum values for department
+	let department: GovernmentDepartment
+	if (Object.keys(GovernmentDepartment).includes(classification.department)) {
+		department = GovernmentDepartment[classification.department as keyof typeof GovernmentDepartment]
+	} else if (Object.values(GovernmentDepartment).includes(classification.department)) {
+		department = classification.department as GovernmentDepartment
+	} else {
+		department = GovernmentDepartment.OTHER
 	}
 
 	return { category, severity, department }
@@ -223,22 +213,22 @@ function getDefaultClassification(): AIClassificationResult {
 }
 
 /**
- * Validate complaint type
+ * Validate complaint type - check if it's a valid enum key
  */
 function isValidComplaintType(value: string): value is ComplaintType {
-	return Object.values(ComplaintType).includes(value as ComplaintType)
+	return Object.keys(ComplaintType).includes(value) || Object.values(ComplaintType).includes(value as ComplaintType)
 }
 
 /**
- * Validate severity
+ * Validate severity - check if it's a valid enum key
  */
 function isValidSeverity(value: string): value is ComplaintSeverity {
-	return Object.values(ComplaintSeverity).includes(value as ComplaintSeverity)
+	return Object.keys(ComplaintSeverity).includes(value) || Object.values(ComplaintSeverity).includes(value as ComplaintSeverity)
 }
 
 /**
- * Validate department
+ * Validate department - check if it's a valid enum key
  */
 function isValidDepartment(value: string): value is GovernmentDepartment {
-	return Object.values(GovernmentDepartment).includes(value as GovernmentDepartment)
+	return Object.keys(GovernmentDepartment).includes(value) || Object.values(GovernmentDepartment).includes(value as GovernmentDepartment)
 }
