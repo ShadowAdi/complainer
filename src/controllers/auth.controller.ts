@@ -1,0 +1,107 @@
+import { Request, Response, NextFunction } from "express"
+import { AuthService } from "../services/auth.service"
+import { AppError } from "../utils/AppError"
+import {
+	ILoginResponse,
+	IRegisterResponse,
+	IUserResponse,
+} from "../interfaces/user.interface"
+import { logger } from "../config/logger"
+import { User } from "../models/user.model"
+
+export class AuthController {
+	/**
+	 * Register or Login user (combined for demo)
+	 * POST /api/auth
+	 * If user exists: login
+	 * If user doesn't exist: register
+	 */
+	static async authenticate(
+		req: Request,
+		res: Response,
+		next: NextFunction
+	): Promise<void> {
+		try {
+			const { username, password } = req.body
+
+			// Check if user exists
+			let user = await User.findOne({ username })
+			let isNewUser = false
+
+			if (user) {
+				// User exists - verify password (login)
+				const isPasswordValid = await user.comparePassword(password)
+				if (!isPasswordValid) {
+					throw new AppError("Invalid password", 401)
+				}
+			} else {
+				// User doesn't exist - create new user (register)
+				user = await User.create({
+					username,
+					password,
+				})
+				isNewUser = true
+			}
+
+			// Generate JWT token
+			const token = AuthService.generateToken({
+				userId: user._id.toString(),
+				username: user.username,
+			})
+
+			// Prepare response (exclude password)
+			const userResponse: IUserResponse = {
+				_id: user._id.toString(),
+				username: user.username,
+				createdAt: user.createdAt,
+				updatedAt: user.updatedAt,
+			}
+
+			const response: ILoginResponse = {
+				user: userResponse,
+				token,
+			}
+
+			logger.info(`User ${isNewUser ? 'registered' : 'logged in'}: ${user.username}`)
+
+			res.status(isNewUser ? 201 : 200).json({
+				status: "success",
+				message: isNewUser ? "User registered successfully" : "Login successful",
+				data: response,
+			})
+		} catch (error) {
+			next(error)
+		}
+	}
+
+	/**
+	 * Get current user profile
+	 * GET /api/auth/me
+	 * Protected route
+	 */
+	static async getProfile(
+		req: Request,
+		res: Response,
+		next: NextFunction
+	): Promise<void> {
+		try {
+			if (!req.user) {
+				throw new AppError("User not authenticated", 401)
+			}
+
+			const userResponse: IUserResponse = {
+				_id: req.user._id.toString(),
+				username: req.user.username,
+				createdAt: req.user.createdAt,
+				updatedAt: req.user.updatedAt,
+			}
+
+			res.status(200).json({
+				status: "success",
+				data: userResponse,
+			})
+		} catch (error) {
+			next(error)
+		}
+	}
+}
