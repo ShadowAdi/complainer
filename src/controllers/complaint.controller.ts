@@ -40,6 +40,11 @@ export class ComplaintController {
 
 		const { description, latitude, longitude, address } = req.body
 
+		// Validate that at least one of description or image is provided
+		if (!description && !req.file) {
+			throw new AppError("Either description or image must be provided", 400)
+		}
+
 		// Upload image to UploadThing if provided
 		let imageUrl: string | undefined
 		if (req.file) {
@@ -62,7 +67,7 @@ export class ComplaintController {
 		// Create complaint with GeoJSON format
 		const complaint = await Complaint.create({
 			userId: req.user._id.toString(),
-			description,
+			description: description || "",
 			imageUrl,
 			location: {
 				type: "Point",

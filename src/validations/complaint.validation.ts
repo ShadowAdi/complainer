@@ -7,11 +7,19 @@ import {
 
 export const createComplaintValidation = [
 	body("description")
+		.optional()
 		.trim()
 		.notEmpty()
-		.withMessage("Description is required")
+		.withMessage("Description cannot be empty if provided")
 		.isLength({ max: 2000 })
-		.withMessage("Description cannot exceed 2000 characters"),
+		.withMessage("Description cannot exceed 2000 characters")
+		.custom((value, { req }) => {
+			// At least one of description or image must be provided
+			if (!value && !req.file) {
+				throw new Error("Either description or image must be provided")
+			}
+			return true
+		}),
 
 	body("latitude")
 		.notEmpty()

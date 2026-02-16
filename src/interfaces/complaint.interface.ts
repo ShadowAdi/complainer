@@ -9,7 +9,7 @@ import {
 export interface IComplaint extends Document {
 	_id: Types.ObjectId
 	userId: string
-	description: string
+	description?: string
 	imageUrl?: string
 	location: {
 		type: string
@@ -26,7 +26,7 @@ export interface IComplaint extends Document {
 }
 
 export interface IComplaintCreateInput {
-	description: string
+	description?: string
 	image?: any // File input (not processed yet)
 	latitude: number
 	longitude: number
@@ -42,7 +42,7 @@ export interface IComplaintUpdateInput {
 export interface IComplaintResponse {
 	_id: string
 	userId: string
-	description: string
+	description?: string
 	imageUrl?: string
 	location: {
 		type: string

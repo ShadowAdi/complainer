@@ -17,9 +17,10 @@ const ComplaintSchema = new Schema<IComplaint>(
         },
         description: {
             type: String,
-            required: [true, "Description is required"],
+            required: false,
             trim: true,
             maxlength: [2000, "Description cannot exceed 2000 characters"],
+            default: "",
         },
         imageUrl: {
             type: String,
