@@ -1,5 +1,5 @@
 import axios from "axios"
-import { SARVAM_API_KEY } from "../config/dotenv.js"
+import { SARVAM_API_KEY, OPENROUTER_API_KEY } from "../config/dotenv.js"
 import { logger } from "../config/logger.js"
 import {
 	ComplaintType,
@@ -12,6 +12,12 @@ interface AIClassificationResult {
 	severity: ComplaintSeverity
 	department: GovernmentDepartment
 }
+
+// AI Provider type
+type AIProvider = "sarvam" | "openrouter"
+
+// Determine which AI provider to use
+const AI_PROVIDER: AIProvider = OPENROUTER_API_KEY ? "openrouter" : "sarvam"
 
 /**
  * Generate AI prompt for complaint classification
@@ -78,26 +84,118 @@ IMPORTANT INSTRUCTIONS:
 }
 
 /**
- * Classify complaint using Sarvam AI
+ * Classify complaint using AI (Sarvam or OpenRouter)
  */
 export async function classifyComplaintWithAI(
 	description?: string,
 	imageUrl?: string
 ): Promise<AIClassificationResult> {
 	try {
-		if (!SARVAM_API_KEY) {
-			logger.warn("Sarvam API key not configured, using default classification")
-			return getDefaultClassification()
-		}
-
 		if (!description && !imageUrl) {
 			logger.warn("No description or image provided for AI classification")
 			return getDefaultClassification()
 		}
 
+		// Use OpenRouter if API key is available, otherwise fallback to Sarvam
+		if (AI_PROVIDER === "openrouter" && OPENROUTER_API_KEY) {
+			return await classifyWithOpenRouter(description, imageUrl)
+		} else if (SARVAM_API_KEY) {
+			return await classifyWithSarvam(description, imageUrl)
+		} else {
+			logger.warn("No AI API key configured, using default classification")
+			return getDefaultClassification()
+		}
+	} catch (error) {
+		logger.error(`Error in AI classification: ${error}`)
+		return getDefaultClassification()
+	}
+}
+
+/**
+ * Classify complaint using OpenRouter (DeepSeek v3.2)
+ */
+async function classifyWithOpenRouter(
+	description?: string,
+	imageUrl?: string
+): Promise<AIClassificationResult> {
+	try {
 		const prompt = generateClassificationPrompt(description, imageUrl)
 
+		logger.info("Calling OpenRouter (DeepSeek) for complaint classification...")
+
+		const response = await axios.post(
+			"https://openrouter.ai/api/v1/chat/completions",
+			{
+				model: "deepseek/deepseek-chat",
+				messages: [
+					{
+						role: "user",
+						content: prompt,
+					},
+				],
+			},
+			{
+				headers: {
+					Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+					"Content-Type": "application/json",
+				},
+				timeout: 30000,
+			}
+		)
+
+		const rawContent = response.data?.choices?.[0]?.message?.content
+		if (!rawContent) {
+			logger.error("No content in OpenRouter response")
+			return getDefaultClassification()
+		}
+
+		logger.info(`OpenRouter raw response: ${rawContent}`)
+
+		// Parse the JSON response
+		const jsonMatch = rawContent.match(/\{[\s\S]*\}/)
+		if (!jsonMatch) {
+			logger.error("Could not extract JSON from OpenRouter response")
+			return getDefaultClassification()
+		}
+
+		let classification: AIClassificationResult = JSON.parse(jsonMatch[0])
+
+		// Normalize the response
+		classification = normalizeClassification(classification)
+
+		// Validate the response
+		if (
+			!isValidComplaintType(classification.category) ||
+			!isValidSeverity(classification.severity) ||
+			!isValidDepartment(classification.department)
+		) {
+			logger.error("Invalid classification values from OpenRouter", classification)
+			return getDefaultClassification()
+		}
+
+		logger.info("OpenRouter classification successful:", classification)
+		return classification
+	} catch (error) {
+		if (axios.isAxiosError(error)) {
+			logger.error(`OpenRouter API error: ${error.response?.status} - ${error.message}`)
+		} else {
+			logger.error(`Error in OpenRouter classification: ${error}`)
+		}
+		return getDefaultClassification()
+	}
+}
+
+/**
+ * Classify complaint using Sarvam AI
+ */
+async function classifyWithSarvam(
+	description?: string,
+	imageUrl?: string
+): Promise<AIClassificationResult> {
+	try {
 		logger.info("Calling Sarvam AI for complaint classification...")
+
+		const prompt = generateClassificationPrompt(description, imageUrl)
 
 		const response = await axios.post(
 			"https://api.sarvam.ai/v1/chat/completions",
@@ -154,7 +252,7 @@ export async function classifyComplaintWithAI(
 		return classification
 	} catch (error) {
 		if (axios.isAxiosError(error)) {
-			logger.error(`Sarvam AI API error: ${error.response?.status} - ${error.message}`)
+			logger.error(`Sarvam AISarvam  API error: ${error.response?.status} - ${error.message}`)
 		} else {
 			logger.error(`Error in AI classification: ${error}`)
 		}
