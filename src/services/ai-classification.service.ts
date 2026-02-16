@@ -17,17 +17,31 @@ interface AIClassificationResult {
  * Generate AI prompt for complaint classification
  */
 function generateClassificationPrompt(description?: string, imageUrl?: string): string {
-	const categories = Object.values(ComplaintType).join(", ")
-	const severities = Object.values(ComplaintSeverity).join(", ")
-	const departments = Object.values(GovernmentDepartment).join(", ")
+	// Create mapping of display values to enum keys
+	const categoryMapping = Object.entries(ComplaintType).map(([key, value]) => 
+		`  "${value}" (use: "${key}")`
+	).join('\n')
+	
+	const severityMapping = Object.entries(ComplaintSeverity).map(([key, value]) => 
+		`  "${value}" (use: "${key}")`
+	).join('\n')
+	
+	const departmentMapping = Object.entries(GovernmentDepartment).map(([key, value]) => 
+		`  "${value}" (use: "${key}")`
+	).join('\n')
 
 	let prompt = `You are an AI assistant that classifies citizen complaints for government departments in India.
 
-Analyze the following complaint and provide a JSON response with the classification:
+Analyze the following complaint and provide a JSON response with the classification.
 
-Available Categories: ${categories}
-Available Severities: ${severities}
-Available Departments: ${departments}
+Available Categories (use the enum key in your response):
+${categoryMapping}
+
+Available Severities (use the enum key):
+${severityMapping}
+
+Available Departments (use the enum key):
+${departmentMapping}
 `
 
 	if (description) {
@@ -41,21 +55,24 @@ Available Departments: ${departments}
 
 	prompt += `
 
-Instructions:
-1. Based on the description${imageUrl ? " and image" : ""}, determine:
-   - category: The type of complaint (choose from available categories)
-   - severity: How urgent/serious is this issue (LOW, MEDIUM, HIGH, CRITICAL)
-   - department: Which government department should handle this (choose from available departments)
-
-2. Return ONLY a valid JSON object in this exact format:
+IMPORTANT INSTRUCTIONS:
+1. Based on the description${imageUrl ? " and image" : ""}, determine the most appropriate classification.
+2. Return ONLY a valid JSON object with enum KEYS (not display values) in this exact format:
 {
-  "category": "CATEGORY_NAME",
-  "severity": "SEVERITY_LEVEL",
-  "department": "DEPARTMENT_NAME"
+  "category": "ENUM_KEY_HERE",
+  "severity": "ENUM_KEY_HERE",
+  "department": "ENUM_KEY_HERE"
 }
 
-3. Do not include any explanation, just the JSON object.
-4. Ensure all values are from the available options provided above.`
+3. Example response for a pothole complaint:
+{
+  "category": "ROAD_DAMAGE",
+  "severity": "HIGH",
+  "department": "PUBLIC_WORKS"
+}
+
+4. Use ONLY the enum keys shown in parentheses above, not the display values.
+5. Do not include any explanation, markdown formatting, or extra text - ONLY the JSON object.`
 
 	return prompt
 }
@@ -118,7 +135,10 @@ export async function classifyComplaintWithAI(
 			return getDefaultClassification()
 		}
 
-		const classification: AIClassificationResult = JSON.parse(jsonMatch[0])
+		let classification: AIClassificationResult = JSON.parse(jsonMatch[0])
+		
+		// Normalize the response in case AI returns display values instead of enum keys
+		classification = normalizeClassification(classification)
 
 		// Validate the response
 		if (
@@ -140,6 +160,55 @@ export async function classifyComplaintWithAI(
 		}
 		return getDefaultClassification()
 	}
+}
+
+/**
+ * Normalize AI response by converting display values to enum keys if needed
+ */
+function normalizeClassification(classification: any): AIClassificationResult {
+	// Try to find matching enum key for category
+	let category = classification.category as ComplaintType
+	if (!isValidComplaintType(category)) {
+		// Try to find by display value
+		const categoryEntry = Object.entries(ComplaintType).find(
+			([_, value]) => value === classification.category
+		)
+		if (categoryEntry) {
+			category = categoryEntry[0] as ComplaintType
+		} else {
+			category = ComplaintType.OTHER
+		}
+	}
+
+	// Try to find matching enum key for severity
+	let severity = classification.severity as ComplaintSeverity
+	if (!isValidSeverity(severity)) {
+		// Try to find by display value
+		const severityEntry = Object.entries(ComplaintSeverity).find(
+			([_, value]) => value === classification.severity
+		)
+		if (severityEntry) {
+			severity = severityEntry[0] as ComplaintSeverity
+		} else {
+			severity = ComplaintSeverity.MEDIUM
+		}
+	}
+
+	// Try to find matching enum key for department
+	let department = classification.department as GovernmentDepartment
+	if (!isValidDepartment(department)) {
+		// Try to find by display value
+		const departmentEntry = Object.entries(GovernmentDepartment).find(
+			([_, value]) => value === classification.department
+		)
+		if (departmentEntry) {
+			department = departmentEntry[0] as GovernmentDepartment
+		} else {
+			department = GovernmentDepartment.OTHER
+		}
+	}
+
+	return { category, severity, department }
 }
 
 /**
