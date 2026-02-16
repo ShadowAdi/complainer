@@ -16,7 +16,7 @@ app.use("/api/health", healthRouter);
 
 app.get('/', (_req, res) => {
     res.json({
-        service: 'linkedin-post-backend',
+        service: 'complainer-backend',
         status: 'running',
         version: '2.1.0',
         features: {
