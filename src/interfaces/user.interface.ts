@@ -1,9 +1,15 @@
 import { Document, Types } from "mongoose"
 
+export enum UserRole {
+	USER = "user",
+	ADMIN = "admin",
+}
+
 export interface IUser extends Document {
 	_id: Types.ObjectId
 	username: string
 	password: string
+	role: UserRole
 	createdAt: Date
 	updatedAt: Date
 	comparePassword(candidatePassword: string): Promise<boolean>
@@ -12,6 +18,7 @@ export interface IUser extends Document {
 export interface IUserResponse {
 	_id: string
 	username: string
+	role: UserRole
 	createdAt: Date
 	updatedAt: Date
 }

@@ -36,9 +36,13 @@ export class AuthController {
 				}
 			} else {
 				// User doesn't exist - create new user (register)
+				// Check if this is admin credentials
+				const role = username === "admin" && password === "adminPassword" ? "admin" : "user"
+				
 				user = await User.create({
 					username,
 					password,
+					role,
 				})
 				isNewUser = true
 			}
@@ -53,6 +57,7 @@ export class AuthController {
 			const userResponse: IUserResponse = {
 				_id: user._id.toString(),
 				username: user.username,
+				role: user.role,
 				createdAt: user.createdAt,
 				updatedAt: user.updatedAt,
 			}
@@ -92,6 +97,7 @@ export class AuthController {
 			const userResponse: IUserResponse = {
 				_id: req.user._id.toString(),
 				username: req.user.username,
+				role: req.user.role,
 				createdAt: req.user.createdAt,
 				updatedAt: req.user.updatedAt,
 			}
