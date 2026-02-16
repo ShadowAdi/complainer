@@ -12,7 +12,7 @@ export const initializeConnection = async () => {
   try {
     await mongoose
       .connect(DB_URL!,{
-        dbName:"linkedin-post-db"
+        dbName:"complainer-post-db"
       })
       .then(() => {
         logger.info(`Connected Successfully`);
