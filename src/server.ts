@@ -1,8 +1,8 @@
 import express, { Express } from "express";
 import helmet from "helmet";
 import { CorsConfig } from "./config/cors.js";
-import { healthRouter } from "./routes/health.route.js";
 import { CustomErrorHandler } from "./middlewares/custom-error.middleware.js";
+import { healthRouter } from "./routes/health.route.js";
 
 
 const app: Express = express()
