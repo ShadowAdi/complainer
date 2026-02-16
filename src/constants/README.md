@@ -1,6 +1,6 @@
 # Complaint System Constants
 
-This folder contains all constants, enums, and configurations for the AI-Based Local Governance Complaint Redressal System.
+This folder contains all constants, enums, and configurations for the AI-Based Local Governance Complaint Redressal System
 
 ## Files
 
