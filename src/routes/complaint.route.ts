@@ -8,17 +8,19 @@ import {
 	updateComplaintValidation,
 	complaintIdValidation,
 } from "../validations/complaint.validation.js"
+import { upload } from "../config/multer.js"
 
 export const complaintRouter: RouterType = Router()
 
 /**
  * @route   POST /api/complaints
- * @desc    Create new complaint
+ * @desc    Create new complaint with optional image upload
  * @access  Protected (User)
  */
 complaintRouter.post(
 	"/",
 	AuthMiddleware,
+	upload.single("image"), // Handle single image upload with field name "image"
 	createComplaintValidation,
 	validate,
 	ComplaintController.createComplaint

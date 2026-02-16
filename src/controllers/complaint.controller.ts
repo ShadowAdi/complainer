@@ -15,6 +15,7 @@ import {
 	getDepartmentByComplaintType,
 	getSeverityByComplaintType,
 } from "../constants/complaint.constants.js"
+import { uploadImageToUploadThing, deleteImageFromUploadThing } from "../utils/uploadthing-helpers.js"
 
 export class ComplaintController {
 	/**
@@ -39,6 +40,19 @@ export class ComplaintController {
 
 		const { description, latitude, longitude, address } = req.body
 
+		// Upload image to UploadThing if provided
+		let imageUrl: string | undefined
+		if (req.file) {
+			try {
+				const fileName = `complaint-${req.user._id}-${Date.now()}.${req.file.mimetype.split('/')[1]}`
+				imageUrl = await uploadImageToUploadThing(req.file.buffer, fileName)
+				logger.info(`Image uploaded to UploadThing: ${imageUrl}`)
+			} catch (error) {
+				logger.error(`Failed to upload image: ${error}`)
+				throw new AppError("Failed to upload image", 500)
+			}
+		}
+
 		// For now, we set default category, department, and severity
 		// Later AI will classify these
 		const category = ComplaintType.OTHER
@@ -49,6 +63,7 @@ export class ComplaintController {
 		const complaint = await Complaint.create({
 			userId: req.user._id.toString(),
 			description,
+			imageUrl,
 			location: {
 				type: "Point",
 				coordinates: [longitude, latitude], // GeoJSON: [lng, lat]
@@ -307,6 +322,11 @@ export class ComplaintController {
 				complaint.userId !== req.user._id.toString()
 			) {
 				throw new AppError("Access denied", 403)
+			}
+
+			// Delete image from UploadThing if exists
+			if (complaint.imageUrl) {
+				await deleteImageFromUploadThing(complaint.imageUrl)
 			}
 
 			await Complaint.findByIdAndDelete(id)

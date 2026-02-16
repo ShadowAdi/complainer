@@ -30,6 +30,8 @@ export const createComplaintValidation = [
 		.trim()
 		.isLength({ max: 500 })
 		.withMessage("Address cannot exceed 500 characters"),
+
+	// Image is handled by multer middleware, validated separately
 ]
 
 export const updateComplaintValidation = [
