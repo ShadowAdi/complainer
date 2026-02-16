@@ -16,6 +16,7 @@ import {
 	getSeverityByComplaintType,
 } from "../constants/complaint.constants.js"
 import { uploadImageToUploadThing, deleteImageFromUploadThing } from "../utils/uploadthing-helpers.js"
+import { classifyComplaintWithAI } from "../services/ai-classification.service.js"
 
 export class ComplaintController {
 	/**
@@ -58,11 +59,15 @@ export class ComplaintController {
 			}
 		}
 
-		// For now, we set default category, department, and severity
-		// Later AI will classify these
-		const category = ComplaintType.OTHER
-		const department = getDepartmentByComplaintType(category)
-		const severity = getSeverityByComplaintType(category)
+		// Use AI to classify the complaint based on description and/or image
+		logger.info("Classifying complaint with AI...")
+		const aiClassification = await classifyComplaintWithAI(description, imageUrl)
+		
+		const category = aiClassification.category
+		const severity = aiClassification.severity
+		const department = aiClassification.department
+		
+		logger.info(`AI Classification - Category: ${category}, Severity: ${severity}, Department: ${department}`)
 
 		// Create complaint with GeoJSON format
 		const complaint = await Complaint.create({
