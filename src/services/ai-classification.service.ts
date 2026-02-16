@@ -16,8 +16,8 @@ interface AIClassificationResult {
 // AI Provider type
 type AIProvider = "sarvam" | "openrouter"
 
-// Determine which AI provider to use
-const AI_PROVIDER: AIProvider = OPENROUTER_API_KEY ? "openrouter" : "sarvam"
+// Determine primary AI provider based on available keys
+const PRIMARY_PROVIDER: AIProvider = SARVAM_API_KEY ? "sarvam" : "openrouter"
 
 /**
  * Generate AI prompt for complaint classification
@@ -84,7 +84,7 @@ IMPORTANT INSTRUCTIONS:
 }
 
 /**
- * Classify complaint using AI (Sarvam or OpenRouter)
+ * Classify complaint using AI (Sarvam or OpenRouter with fallback)
  */
 export async function classifyComplaintWithAI(
 	description?: string,
@@ -96,15 +96,34 @@ export async function classifyComplaintWithAI(
 			return getDefaultClassification()
 		}
 
-		// Use OpenRouter if API key is available, otherwise fallback to Sarvam
-		if (AI_PROVIDER === "openrouter" && OPENROUTER_API_KEY) {
-			return await classifyWithOpenRouter(description, imageUrl)
-		} else if (SARVAM_API_KEY) {
-			return await classifyWithSarvam(description, imageUrl)
-		} else {
-			logger.warn("No AI API key configured, using default classification")
-			return getDefaultClassification()
+		let result: AIClassificationResult | null = null
+
+		// Try primary provider (Sarvam)
+		if (PRIMARY_PROVIDER === "sarvam" && SARVAM_API_KEY) {
+			logger.info("Trying primary provider: Sarvam AI")
+			result = await classifyWithSarvam(description, imageUrl)
+			
+			// Check if Sarvam returned default classification (failed)
+			if (isDefaultClassification(result)) {
+				logger.warn("Sarvam AI returned default classification, trying fallback...")
+				result = null
+			}
 		}
+
+		// If primary failed or not available, try OpenRouter
+		if (!result && OPENROUTER_API_KEY) {
+			logger.info("Trying fallback provider: OpenRouter")
+			result = await classifyWithOpenRouter(description, imageUrl)
+		}
+
+		// If OpenRouter also failed, try Sarvam as fallback (if it wasn't primary)
+		if (!result && PRIMARY_PROVIDER === "openrouter" && SARVAM_API_KEY) {
+			logger.info("OpenRouter failed, trying fallback: Sarvam AI")
+			result = await classifyWithSarvam(description, imageUrl)
+		}
+
+		// Return result or default
+		return result || getDefaultClassification()
 	} catch (error) {
 		logger.error(`Error in AI classification: ${error}`)
 		return getDefaultClassification()
@@ -181,7 +200,8 @@ async function classifyWithOpenRouter(
 		} else {
 			logger.error(`Error in OpenRouter classification: ${error}`)
 		}
-		return getDefaultClassification()
+		// Return null to indicate failure, allowing fallback
+		return null as any
 	}
 }
 
@@ -252,11 +272,12 @@ async function classifyWithSarvam(
 		return classification
 	} catch (error) {
 		if (axios.isAxiosError(error)) {
-			logger.error(`Sarvam AISarvam  API error: ${error.response?.status} - ${error.message}`)
+			logger.error(`Sarvam AI API error: ${error.response?.status} - ${error.message}`)
 		} else {
-			logger.error(`Error in AI classification: ${error}`)
+			logger.error(`Error in Sarvam AI classification: ${error}`)
 		}
-		return getDefaultClassification()
+		// Return null to indicate failure, allowing fallback
+		return null as any
 	}
 }
 
@@ -308,6 +329,17 @@ function getDefaultClassification(): AIClassificationResult {
 		severity: ComplaintSeverity.MEDIUM,
 		department: GovernmentDepartment.OTHER,
 	}
+}
+
+/**
+ * Check if classification result is default (indicating failure)
+ */
+function isDefaultClassification(classification: AIClassificationResult): boolean {
+	return (
+		classification.category === ComplaintType.OTHER &&
+		classification.severity === ComplaintSeverity.MEDIUM &&
+		classification.department === GovernmentDepartment.OTHER
+	)
 }
 
 /**
