@@ -1,4 +1,4 @@
-import { IAuthTokenPayload } from "../interfaces/user.interface";
+import { IAuthTokenPayload } from "../interfaces/user.interface.js";
 export declare class AuthService {
     private static readonly JWT_SECRET;
     private static readonly JWT_EXPIRES_IN;

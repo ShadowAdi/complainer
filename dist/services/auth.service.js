@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { AppError } from "../utils/AppError";
+import { AppError } from "../utils/AppError.js";
 export class AuthService {
     static JWT_SECRET = process.env.JWT_SECRET_KEY || "your-secret-key";
     static JWT_EXPIRES_IN = "7d";

@@ -1,6 +1,6 @@
 import { Schema, model } from "mongoose";
 import bcrypt from "bcrypt";
-import { UserRole } from "../interfaces/user.interface";
+import { UserRole } from "../interfaces/user.interface.js";
 const UserSchema = new Schema({
     username: {
         type: String,

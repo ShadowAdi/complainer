@@ -1,13 +1,13 @@
 import { Request, Response, NextFunction } from "express"
-import { AuthService } from "../services/auth.service"
-import { AppError } from "../utils/AppError"
+import { AuthService } from "../services/auth.service.js"
+import { AppError } from "../utils/AppError.js"
 import {
 	ILoginResponse,
 	IRegisterResponse,
 	IUserResponse,
-} from "../interfaces/user.interface"
-import { logger } from "../config/logger"
-import { User } from "../models/user.model"
+} from "../interfaces/user.interface.js"
+import { logger } from "../config/logger.js"
+import { User } from "../models/user.model.js"
 
 export class AuthController {
 	/**

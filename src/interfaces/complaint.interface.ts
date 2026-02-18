@@ -4,7 +4,7 @@ import {
 	ComplaintSeverity,
 	GovernmentDepartment,
 	ComplaintStatus,
-} from "../constants/complaint.constants"
+} from "../constants/complaint.constants.js"
 
 export interface IComplaint extends Document {
 	_id: Types.ObjectId

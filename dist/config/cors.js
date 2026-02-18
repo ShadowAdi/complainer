@@ -1,6 +1,6 @@
 import cors from "cors";
-import { CLIENT_URL } from "./dotenv";
-import { logger } from "./logger";
+import { CLIENT_URL } from "./dotenv.js";
+import { logger } from "./logger.js";
 export const CorsConfig = (app) => {
     try {
         app.use(cors({

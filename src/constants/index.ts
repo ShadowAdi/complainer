@@ -15,4 +15,4 @@ export {
 	COMPLAINT_SEVERITY_PRIORITY,
 	getDepartmentByComplaintType,
 	getSeverityByComplaintType,
-} from "./complaint.constants"
+} from "./complaint.constants.js"

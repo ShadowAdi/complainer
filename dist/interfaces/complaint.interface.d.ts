@@ -1,5 +1,5 @@
 import { Document, Types } from "mongoose";
-import { ComplaintType, ComplaintSeverity, GovernmentDepartment, ComplaintStatus } from "../constants/complaint.constants";
+import { ComplaintType, ComplaintSeverity, GovernmentDepartment, ComplaintStatus } from "../constants/complaint.constants.js";
 export interface IComplaint extends Document {
     _id: Types.ObjectId;
     userId: string;

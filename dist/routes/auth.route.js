@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { AuthController } from "../controllers/auth.controller";
-import { registerValidation } from "../validations/auth.validation";
-import { validate } from "../middlewares/validation.middleware";
-import { AuthMiddleware } from "../middlewares/auth.middleware";
+import { AuthController } from "../controllers/auth.controller.js";
+import { registerValidation } from "../validations/auth.validation.js";
+import { validate } from "../middlewares/validation.middleware.js";
+import { AuthMiddleware } from "../middlewares/auth.middleware.js";
 export const authRouter = Router();
 /**
  * @route   POST /api/auth

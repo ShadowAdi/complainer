@@ -1,5 +1,5 @@
 import { Schema, model } from "mongoose";
-import { ComplaintType, ComplaintSeverity, GovernmentDepartment, ComplaintStatus, } from "../constants/complaint.constants";
+import { ComplaintType, ComplaintSeverity, GovernmentDepartment, ComplaintStatus, } from "../constants/complaint.constants.js";
 const ComplaintSchema = new Schema({
     userId: {
         type: String,

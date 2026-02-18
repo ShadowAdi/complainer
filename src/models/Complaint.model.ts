@@ -1,11 +1,11 @@
 import { Schema, model } from "mongoose"
-import { IComplaint } from "../interfaces/complaint.interface"
+import { IComplaint } from "../interfaces/complaint.interface.js"
 import {
     ComplaintType,
     ComplaintSeverity,
     GovernmentDepartment,
     ComplaintStatus,
-} from "../constants/complaint.constants"
+} from "../constants/complaint.constants.js"
 
 const ComplaintSchema = new Schema<IComplaint>(
     {

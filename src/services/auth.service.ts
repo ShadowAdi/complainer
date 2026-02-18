@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken"
-import { IAuthTokenPayload } from "../interfaces/user.interface"
-import { AppError } from "../utils/AppError"
+import { IAuthTokenPayload } from "../interfaces/user.interface.js"
+import { AppError } from "../utils/AppError.js"
 
 export class AuthService {
 	private static readonly JWT_SECRET = process.env.JWT_SECRET_KEY || "your-secret-key"

@@ -1,8 +1,8 @@
 import { Router,type Router as RouterType } from "express"
-import { AuthController } from "../controllers/auth.controller"
-import { registerValidation, loginValidation } from "../validations/auth.validation"
-import { validate } from "../middlewares/validation.middleware"
-import { AuthMiddleware } from "../middlewares/auth.middleware"
+import { AuthController } from "../controllers/auth.controller.js"
+import { registerValidation, loginValidation } from "../validations/auth.validation.js"
+import { validate } from "../middlewares/validation.middleware.js"
+import { AuthMiddleware } from "../middlewares/auth.middleware.js"
 
 export const authRouter:RouterType = Router()
 

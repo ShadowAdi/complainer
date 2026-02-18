@@ -1,5 +1,5 @@
 import { body, param } from "express-validator";
-import { ComplaintStatus, ComplaintSeverity, GovernmentDepartment, } from "../constants/complaint.constants";
+import { ComplaintStatus, ComplaintSeverity, GovernmentDepartment, } from "../constants/complaint.constants.js";
 export const createComplaintValidation = [
     body("description")
         .optional()

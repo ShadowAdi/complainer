@@ -1,5 +1,5 @@
 import { createUploadthing } from "uploadthing/express";
-import { logger } from "../config/logger";
+import { logger } from "../config/logger.js";
 const f = createUploadthing();
 /**
  * UploadThing file router configuration

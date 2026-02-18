@@ -3,7 +3,7 @@ import {
 	ComplaintStatus,
 	ComplaintSeverity,
 	GovernmentDepartment,
-} from "../constants/complaint.constants"
+} from "../constants/complaint.constants.js"
 
 export const createComplaintValidation = [
 	body("description")

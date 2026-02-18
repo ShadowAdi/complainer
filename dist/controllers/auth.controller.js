@@ -1,7 +1,7 @@
-import { AuthService } from "../services/auth.service";
-import { AppError } from "../utils/AppError";
-import { logger } from "../config/logger";
-import { User } from "../models/user.model";
+import { AuthService } from "../services/auth.service.js";
+import { AppError } from "../utils/AppError.js";
+import { logger } from "../config/logger.js";
+import { User } from "../models/user.model.js";
 export class AuthController {
     /**
      * Register or Login user (combined for demo)
