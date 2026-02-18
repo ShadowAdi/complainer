@@ -1,0 +1,7 @@
+# Don't ignore these files during deployment
+!dist/
+!render.yaml
+!package.json
+!Procfile
+!start.sh
+!simple-start.sh
