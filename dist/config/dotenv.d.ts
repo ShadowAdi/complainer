@@ -1,0 +1,11 @@
+export declare const PORT: string | undefined;
+export declare const DB_URL: string | undefined;
+export declare const CLIENT_URL: string | undefined;
+export declare const GEMINI_API_KEY: string | undefined;
+export declare const OTHER_GEMINI_API_KEY: string | undefined;
+export declare const SARVAM_API_KEY: string | undefined;
+export declare const UPLOADTHING_API_KEY: string | undefined;
+export declare const OPENROUTER_API_KEY: string | undefined;
+export declare const OTHER_API_KEY: string | undefined;
+export declare const JWT_SECRET_KEY: string | undefined;
+export declare const NODE_ENV: string | undefined;
