@@ -11,6 +11,7 @@ interface AIClassificationResult {
 	category: ComplaintType
 	severity: ComplaintSeverity
 	department: GovernmentDepartment
+	classifiable: boolean
 }
 
 // AI Provider type
@@ -63,22 +64,34 @@ ${departmentMapping}
 
 IMPORTANT INSTRUCTIONS:
 1. Based on the description${imageUrl ? " and image" : ""}, determine the most appropriate classification.
-2. Return ONLY a valid JSON object with enum KEYS (not display values) in this exact format:
+2. If the description is gibberish, meaningless, too vague (e.g. "xyz", "abc", "test", random characters), or does NOT describe any real civic complaint, you MUST return classifiable as false.
+3. If you cannot confidently determine the complaint category from the given information, return classifiable as false.
+4. Return ONLY a valid JSON object with enum KEYS (not display values) in this exact format:
 {
+  "classifiable": true,
   "category": "ENUM_KEY_HERE",
   "severity": "ENUM_KEY_HERE",
   "department": "ENUM_KEY_HERE"
 }
 
-3. Example response for a pothole complaint:
+5. Example response for a pothole complaint:
 {
+  "classifiable": true,
   "category": "ROAD_DAMAGE",
   "severity": "HIGH",
   "department": "PUBLIC_WORKS"
 }
 
-4. Use ONLY the enum keys shown in parentheses above, not the display values.
-5. Do not include any explanation, markdown formatting, or extra text - ONLY the JSON object.`
+6. Example response when description is unclear/gibberish:
+{
+  "classifiable": false,
+  "category": "OTHER",
+  "severity": "MEDIUM",
+  "department": "OTHER"
+}
+
+7. Use ONLY the enum keys shown in parentheses above, not the display values.
+8. Do not include any explanation, markdown formatting, or extra text - ONLY the JSON object.`
 
 	return prompt
 }
@@ -93,7 +106,16 @@ export async function classifyComplaintWithAI(
 	try {
 		if (!description && !imageUrl) {
 			logger.warn("No description or image provided for AI classification")
-			return getDefaultClassification()
+			return getUnclassifiableResult()
+		}
+
+		// Validate description is meaningful (at least 10 chars and contains real words)
+		if (description && !imageUrl) {
+			const trimmed = description.trim()
+			if (trimmed.length < 10 || !/[a-zA-Z]{3,}/.test(trimmed)) {
+				logger.warn(`Description too short or meaningless: "${trimmed}"`)
+				return getUnclassifiableResult()
+			}
 		}
 
 		let result: AIClassificationResult | null = null
@@ -122,11 +144,19 @@ export async function classifyComplaintWithAI(
 			result = await classifyWithSarvam(description, imageUrl)
 		}
 
-		// Return result or default
-		return result || getDefaultClassification()
+		// Return result or unclassifiable
+		if (!result) return getUnclassifiableResult()
+
+		// If AI says it can't classify, mark as unclassifiable
+		if (!result.classifiable) {
+			logger.warn("AI determined complaint is not classifiable")
+			return getUnclassifiableResult()
+		}
+
+		return result
 	} catch (error) {
 		logger.error(`Error in AI classification: ${error}`)
-		return getDefaultClassification()
+		return getUnclassifiableResult()
 	}
 }
 
@@ -317,7 +347,7 @@ function normalizeClassification(classification: any): AIClassificationResult {
 		department = GovernmentDepartment.OTHER
 	}
 
-	return { category, severity, department }
+	return { category, severity, department, classifiable: classification.classifiable !== false }
 }
 
 /**
@@ -328,6 +358,19 @@ function getDefaultClassification(): AIClassificationResult {
 		category: ComplaintType.OTHER,
 		severity: ComplaintSeverity.MEDIUM,
 		department: GovernmentDepartment.OTHER,
+		classifiable: true,
+	}
+}
+
+/**
+ * Get unclassifiable result when AI cannot determine complaint type
+ */
+function getUnclassifiableResult(): AIClassificationResult {
+	return {
+		category: ComplaintType.OTHER,
+		severity: ComplaintSeverity.MEDIUM,
+		department: GovernmentDepartment.OTHER,
+		classifiable: false,
 	}
 }
 

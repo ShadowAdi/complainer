@@ -71,7 +71,16 @@ export class ComplaintController {
 		// Use AI to classify the complaint based on description and/or image
 		logger.info("Classifying complaint with AI...")
 		const aiClassification = await classifyComplaintWithAI(description, imageUrl)
-		
+
+		// If AI could not classify the complaint, reject it
+		if (!aiClassification.classifiable) {
+			logger.warn("AI could not classify the complaint - unclear or irrelevant input")
+			throw new AppError(
+				"Unable to classify your complaint. Please provide a clear and detailed description of the civic issue you are facing.",
+				400
+			)
+		}
+
 		const category = aiClassification.category
 		const severity = aiClassification.severity
 		const department = aiClassification.department
