@@ -77,6 +77,18 @@ const ComplaintSchema = new Schema<IComplaint>(
             default: ComplaintStatus.PENDING,
             index: true,
         },
+        aiAnalysis: {
+            confidenceScore: {
+                type: Number,
+                min: 0,
+                max: 100,
+                default: 0,
+            },
+            imageLabels: {
+                type: [String],
+                default: [],
+            },
+        },
         resolvedAt: {
             type: Date,
             default: null,

@@ -33,6 +33,10 @@ export interface IComplaint extends Document {
 	severity: ComplaintSeverity
 	department: GovernmentDepartment
 	status: ComplaintStatus
+	aiAnalysis: {
+		confidenceScore: number
+		imageLabels: string[]
+	}
 	createdAt: Date
 	updatedAt: Date
 	resolvedAt?: Date
@@ -67,6 +71,10 @@ export interface IComplaintResponse {
 	severity: ComplaintSeverity
 	department: GovernmentDepartment
 	status: ComplaintStatus
+	aiAnalysis: {
+		confidenceScore: number
+		imageLabels: string[]
+	}
 	createdAt: Date
 	updatedAt: Date
 	resolvedAt?: Date

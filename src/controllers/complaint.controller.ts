@@ -84,8 +84,10 @@ export class ComplaintController {
 		const category = aiClassification.category
 		const severity = aiClassification.severity
 		const department = aiClassification.department
+		const confidenceScore = aiClassification.confidenceScore
+		const imageLabels = aiClassification.imageLabels
 		
-		logger.info(`AI Classification - Category: ${category}, Severity: ${severity}, Department: ${department}`)
+		logger.info(`AI Classification - Category: ${category}, Severity: ${severity}, Department: ${department}, Confidence: ${confidenceScore}%, Labels: [${imageLabels.join(', ')}]`)
 
 		// Create complaint with GeoJSON format
 		const complaint = await Complaint.create({
@@ -100,6 +102,10 @@ export class ComplaintController {
             category,
             severity,
             department,
+            aiAnalysis: {
+                confidenceScore,
+                imageLabels,
+            },
             status: ComplaintStatus.PENDING,
             imageVerification, 
         })
@@ -116,6 +122,7 @@ export class ComplaintController {
         severity: complaint.severity,
         department: complaint.department,
         status: complaint.status,
+        aiAnalysis: complaint.aiAnalysis,
         createdAt: complaint.createdAt,
         updatedAt: complaint.updatedAt,
         resolvedAt: complaint.resolvedAt,
@@ -249,6 +256,7 @@ export class ComplaintController {
 				severity: complaint.severity,
 				department: complaint.department,
 				status: complaint.status,
+				aiAnalysis: complaint.aiAnalysis,
 				createdAt: complaint.createdAt,
 				updatedAt: complaint.updatedAt,
 				resolvedAt: complaint.resolvedAt,
@@ -309,6 +317,7 @@ export class ComplaintController {
 				severity: complaint.severity,
 				department: complaint.department,
 				status: complaint.status,
+				aiAnalysis: complaint.aiAnalysis,
 				createdAt: complaint.createdAt,
 				updatedAt: complaint.updatedAt,
 				resolvedAt: complaint.resolvedAt,

@@ -12,6 +12,8 @@ interface AIClassificationResult {
 	severity: ComplaintSeverity
 	department: GovernmentDepartment
 	classifiable: boolean
+	confidenceScore: number // 0-100 accuracy percentage
+	imageLabels: string[] // labels detected in the image
 }
 
 // AI Provider type
@@ -79,15 +81,23 @@ IMAGE VALIDATION (CRITICAL):
   "classifiable": true,
   "category": "ENUM_KEY_HERE",
   "severity": "ENUM_KEY_HERE",
-  "department": "ENUM_KEY_HERE"
+  "department": "ENUM_KEY_HERE",
+  "confidenceScore": 85,
+  "imageLabels": ["label1", "label2"]
 }
 
-5. Example response for a pothole complaint:
+FIELD DETAILS:
+- "confidenceScore": A number from 0 to 100 representing how confident you are in your classification. 100 means absolutely certain, 0 means no confidence. Be honest — if description is vague, give a lower score. If image+description both clearly match, give a higher score.
+- "imageLabels": An array of short descriptive labels of what you see in the image (e.g., ["pothole", "damaged road", "asphalt", "water puddle"]). If no image is provided, return an empty array []. If the image is unrelated to a complaint, still describe what you see (e.g., ["computer monitors", "office desk", "indoor room"]).
+
+5. Example response for a pothole complaint with image:
 {
   "classifiable": true,
   "category": "ROAD_DAMAGE",
   "severity": "HIGH",
-  "department": "PUBLIC_WORKS"
+  "department": "PUBLIC_WORKS",
+  "confidenceScore": 92,
+  "imageLabels": ["pothole", "damaged road", "asphalt cracking", "water puddle"]
 }
 
 6. Example response when description is unclear/gibberish:
@@ -95,7 +105,9 @@ IMAGE VALIDATION (CRITICAL):
   "classifiable": false,
   "category": "NOT_A_COMPLAINT",
   "severity": "LOW",
-  "department": "OTHER"
+  "department": "OTHER",
+  "confidenceScore": 5,
+  "imageLabels": []
 }
 
 7. Example response when image does NOT show a civic issue (e.g., photo of a computer lab, selfie, food):
@@ -103,7 +115,9 @@ IMAGE VALIDATION (CRITICAL):
   "classifiable": false,
   "category": "NOT_A_COMPLAINT",
   "severity": "LOW",
-  "department": "OTHER"
+  "department": "OTHER",
+  "confidenceScore": 95,
+  "imageLabels": ["computer monitors", "office desk", "keyboard", "indoor room"]
 }
 
 8. Use ONLY the enum keys shown in parentheses above, not the display values.
@@ -376,7 +390,24 @@ function normalizeClassification(classification: any): AIClassificationResult {
 		department = GovernmentDepartment.OTHER
 	}
 
-	return { category, severity, department, classifiable: classification.classifiable !== false && category !== ComplaintType.NOT_A_COMPLAINT }
+	// Normalize confidenceScore (clamp 0-100)
+	const confidenceScore = typeof classification.confidenceScore === 'number'
+		? Math.max(0, Math.min(100, Math.round(classification.confidenceScore)))
+		: 0
+
+	// Normalize imageLabels
+	const imageLabels = Array.isArray(classification.imageLabels)
+		? classification.imageLabels.filter((label: any) => typeof label === 'string').map((label: string) => label.trim())
+		: []
+
+	return {
+		category,
+		severity,
+		department,
+		classifiable: classification.classifiable !== false && category !== ComplaintType.NOT_A_COMPLAINT,
+		confidenceScore,
+		imageLabels,
+	}
 }
 
 /**
@@ -388,6 +419,8 @@ function getDefaultClassification(): AIClassificationResult {
 		severity: ComplaintSeverity.MEDIUM,
 		department: GovernmentDepartment.OTHER,
 		classifiable: true,
+		confidenceScore: 0,
+		imageLabels: [],
 	}
 }
 
@@ -400,6 +433,8 @@ function getUnclassifiableResult(): AIClassificationResult {
 		severity: ComplaintSeverity.LOW,
 		department: GovernmentDepartment.OTHER,
 		classifiable: false,
+		confidenceScore: 0,
+		imageLabels: [],
 	}
 }
 
