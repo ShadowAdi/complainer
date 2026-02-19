@@ -150,28 +150,43 @@ export async function classifyComplaintWithAI(
 
 		let result: AIClassificationResult | null = null
 
-		// Try primary provider (Sarvam)
-		if (PRIMARY_PROVIDER === "sarvam" && SARVAM_API_KEY) {
-			logger.info("Trying primary provider: Sarvam AI")
-			result = await classifyWithSarvam(description, imageUrl)
-			
-			// Check if Sarvam returned default classification (failed)
-			if (isDefaultClassification(result)) {
-				logger.warn("Sarvam AI returned default classification, trying fallback...")
-				result = null
-			}
-		}
-
-		// If primary failed or not available, try OpenRouter
-		if (!result && OPENROUTER_API_KEY) {
-			logger.info("Trying fallback provider: OpenRouter")
+		// When image is provided, prefer OpenRouter (vision-capable model) over Sarvam (text-only)
+		if (imageUrl && OPENROUTER_API_KEY) {
+			logger.info("Image provided - using OpenRouter (vision model) as primary")
 			result = await classifyWithOpenRouter(description, imageUrl)
-		}
 
-		// If OpenRouter also failed, try Sarvam as fallback (if it wasn't primary)
-		if (!result && PRIMARY_PROVIDER === "openrouter" && SARVAM_API_KEY) {
-			logger.info("OpenRouter failed, trying fallback: Sarvam AI")
-			result = await classifyWithSarvam(description, imageUrl)
+			// If OpenRouter failed or returned default, try Sarvam with description only (no image)
+			if (!result || isDefaultClassification(result)) {
+				if (description && SARVAM_API_KEY) {
+					logger.warn("OpenRouter failed, trying Sarvam AI with description only...")
+					result = await classifyWithSarvam(description, undefined)
+				}
+			}
+		} else {
+			// No image - use normal provider priority
+			// Try primary provider (Sarvam)
+			if (PRIMARY_PROVIDER === "sarvam" && SARVAM_API_KEY) {
+				logger.info("Trying primary provider: Sarvam AI")
+				result = await classifyWithSarvam(description, undefined)
+
+				// Check if Sarvam returned default or unclassifiable
+				if (isDefaultClassification(result) || (result && !result.classifiable)) {
+					logger.warn("Sarvam AI could not classify, trying fallback...")
+					result = null
+				}
+			}
+
+			// If primary failed or not available, try OpenRouter
+			if (!result && OPENROUTER_API_KEY) {
+				logger.info("Trying fallback provider: OpenRouter")
+				result = await classifyWithOpenRouter(description, imageUrl)
+			}
+
+			// If OpenRouter also failed, try Sarvam as fallback (if it wasn't primary)
+			if (!result && PRIMARY_PROVIDER === "openrouter" && SARVAM_API_KEY) {
+				logger.info("OpenRouter failed, trying fallback: Sarvam AI")
+				result = await classifyWithSarvam(description, undefined)
+			}
 		}
 
 		// Return result or unclassifiable

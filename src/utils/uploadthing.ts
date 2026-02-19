@@ -21,7 +21,9 @@ export const uploadRouter = {
 		})
 		.onUploadComplete(async ({ metadata, file }) => {
 			console.log("Upload complete for userId:", metadata.uploadedBy)
-			console.log("File URL:", file.url)
+			// UploadThing v9+: use ufsUrl instead of deprecated url
+			const fileUrl = (file as any).ufsUrl || file.url
+			console.log("File URL:", fileUrl)
             logger.info(`Upload complete for userId: ${metadata.uploadedBy}`)
 			return { uploadedBy: metadata.uploadedBy }
 		}),

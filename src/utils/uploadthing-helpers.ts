@@ -37,11 +37,13 @@ export async function uploadImageToUploadThing(
 			)
 		}
 
-		if (!response.data?.url) {
+		// UploadThing v9+: use ufsUrl, fallback to url for older versions
+		const fileUrl = (response.data as any)?.ufsUrl || response.data?.url
+		if (!fileUrl) {
 			throw new AppError("Invalid response from UploadThing", 500)
 		}
 
-		return response.data.url
+		return fileUrl
 	} catch (error) {
 		if (error instanceof AppError) {
 			throw error
