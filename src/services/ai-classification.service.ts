@@ -57,7 +57,7 @@ ${departmentMapping}
 
 	if (imageUrl) {
 		prompt += `\nComplaint Image URL: ${imageUrl}`
-		prompt += `\n(Analyze the image if accessible to understand the complaint better)`
+		prompt += `\n(IMPORTANT: You MUST analyze this image carefully. Determine what the image actually shows.)`
 	}
 
 	prompt += `
@@ -66,6 +66,14 @@ IMPORTANT INSTRUCTIONS:
 1. Based on the description${imageUrl ? " and image" : ""}, determine the most appropriate classification.
 2. If the description is gibberish, meaningless, too vague (e.g. "xyz", "abc", "test", random characters), or does NOT describe any real civic complaint, you MUST return classifiable as false.
 3. If you cannot confidently determine the complaint category from the given information, return classifiable as false.
+
+IMAGE VALIDATION (CRITICAL):
+- If an image is provided, you MUST analyze what the image actually depicts.
+- If the image shows something UNRELATED to any civic complaint (e.g., selfies, random objects, computer screens, food, animals as pets, indoor office/home photos, memes, screenshots, documents, people posing, landscapes without issues, etc.), you MUST return classifiable as false and category as "NOT_A_COMPLAINT".
+- The image MUST show a genuine civic issue (e.g., potholes, garbage, broken street lights, flooding, sewage, damaged roads, fallen trees, open manholes, etc.) to be classified as a valid complaint.
+- Do NOT force-classify an image into a complaint category just because an image exists. Only classify if the image genuinely shows a civic problem.
+- If the description mentions a civic issue but the image clearly contradicts it or is unrelated, prioritize what the IMAGE shows and mark as NOT_A_COMPLAINT.
+
 4. Return ONLY a valid JSON object with enum KEYS (not display values) in this exact format:
 {
   "classifiable": true,
@@ -85,13 +93,21 @@ IMPORTANT INSTRUCTIONS:
 6. Example response when description is unclear/gibberish:
 {
   "classifiable": false,
-  "category": "OTHER",
-  "severity": "MEDIUM",
+  "category": "NOT_A_COMPLAINT",
+  "severity": "LOW",
   "department": "OTHER"
 }
 
-7. Use ONLY the enum keys shown in parentheses above, not the display values.
-8. Do not include any explanation, markdown formatting, or extra text - ONLY the JSON object.`
+7. Example response when image does NOT show a civic issue (e.g., photo of a computer lab, selfie, food):
+{
+  "classifiable": false,
+  "category": "NOT_A_COMPLAINT",
+  "severity": "LOW",
+  "department": "OTHER"
+}
+
+8. Use ONLY the enum keys shown in parentheses above, not the display values.
+9. Do not include any explanation, markdown formatting, or extra text - ONLY the JSON object.`
 
 	return prompt
 }
@@ -170,16 +186,29 @@ async function classifyWithOpenRouter(
 	try {
 		const prompt = generateClassificationPrompt(description, imageUrl)
 
-		logger.info("Calling OpenRouter (DeepSeek) for complaint classification...")
+		// Use a vision-capable model when image is provided for accurate image analysis
+		const model = imageUrl ? "google/gemini-2.0-flash-001" : "deepseek/deepseek-chat"
+		logger.info(`Calling OpenRouter (${model}) for complaint classification...`)
+
+		// Build message content - use multimodal format when image is provided
+		let messageContent: any
+		if (imageUrl) {
+			messageContent = [
+				{ type: "text", text: prompt },
+				{ type: "image_url", image_url: { url: imageUrl } },
+			]
+		} else {
+			messageContent = prompt
+		}
 
 		const response = await axios.post(
 			"https://openrouter.ai/api/v1/chat/completions",
 			{
-				model: "deepseek/deepseek-chat",
+				model,
 				messages: [
 					{
 						role: "user",
-						content: prompt,
+						content: messageContent,
 					},
 				],
 			},
@@ -347,7 +376,7 @@ function normalizeClassification(classification: any): AIClassificationResult {
 		department = GovernmentDepartment.OTHER
 	}
 
-	return { category, severity, department, classifiable: classification.classifiable !== false }
+	return { category, severity, department, classifiable: classification.classifiable !== false && category !== ComplaintType.NOT_A_COMPLAINT }
 }
 
 /**
@@ -367,8 +396,8 @@ function getDefaultClassification(): AIClassificationResult {
  */
 function getUnclassifiableResult(): AIClassificationResult {
 	return {
-		category: ComplaintType.OTHER,
-		severity: ComplaintSeverity.MEDIUM,
+		category: ComplaintType.NOT_A_COMPLAINT,
+		severity: ComplaintSeverity.LOW,
 		department: GovernmentDepartment.OTHER,
 		classifiable: false,
 	}

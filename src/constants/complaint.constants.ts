@@ -81,6 +81,7 @@ export enum ComplaintType {
 	POWER_OUTAGE = "Power Outage",
 	MOSQUITO_BREEDING = "Mosquito Breeding/Fogging Required",
 	MANHOLE_OPEN = "Open Manhole/Safety Hazard",
+	NOT_A_COMPLAINT = "Not a Valid Complaint",
 	OTHER = "Other",
 }
 
@@ -108,6 +109,7 @@ export const COMPLAINT_CATEGORIES = [
 	ComplaintType.POWER_OUTAGE,
 	ComplaintType.MOSQUITO_BREEDING,
 	ComplaintType.MANHOLE_OPEN,
+	ComplaintType.NOT_A_COMPLAINT,
 	ComplaintType.OTHER,
 ] as const
 
@@ -189,7 +191,7 @@ export const DEPARTMENT_COMPLAINT_MAPPING: Record<
 		ComplaintType.STRAY_ANIMALS,
 	],
 	[GovernmentDepartment.REVENUE]: [],
-	[GovernmentDepartment.OTHER]: [ComplaintType.OTHER],
+	[GovernmentDepartment.OTHER]: [ComplaintType.NOT_A_COMPLAINT, ComplaintType.OTHER],
 }
 
 /**
@@ -223,6 +225,7 @@ export const COMPLAINT_SEVERITY_PRIORITY: Record<
 	[ComplaintType.POWER_OUTAGE]: ComplaintSeverity.HIGH,
 	[ComplaintType.MOSQUITO_BREEDING]: ComplaintSeverity.MEDIUM,
 	[ComplaintType.MANHOLE_OPEN]: ComplaintSeverity.HIGH,
+	[ComplaintType.NOT_A_COMPLAINT]: ComplaintSeverity.LOW,
 	[ComplaintType.OTHER]: ComplaintSeverity.MEDIUM,
 }
 
