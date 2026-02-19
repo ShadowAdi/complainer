@@ -8,7 +8,7 @@ export const CorsConfig = (app: Express) => {
   try {
     app.use(
       cors({
-        origin: CLIENT_URL,
+        origin: ["http://localhost:3001","http://localhost:3000"].filter((url): url is string => url !== undefined),
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
         allowedHeaders: ["Content-Type", "Authorization"],
         credentials:true

@@ -46,6 +46,15 @@ export class ComplaintController {
 			throw new AppError("Either description or image must be provided", 400)
 		}
 
+		let imageVerification = null
+        if (req.body.imageVerification) {
+            try {
+                imageVerification = JSON.parse(req.body.imageVerification)
+            } catch {
+                // If parsing fails, just ignore — not critical
+                logger.warn("Failed to parse imageVerification JSON")
+            }
+        }
 		// Upload image to UploadThing if provided
 		let imageUrl: string | undefined
 		if (req.file) {
@@ -71,36 +80,38 @@ export class ComplaintController {
 
 		// Create complaint with GeoJSON format
 		const complaint = await Complaint.create({
-			userId: req.user._id.toString(),
-			description: description || "",
-			imageUrl,
-			location: {
-				type: "Point",
-				coordinates: [longitude, latitude], // GeoJSON: [lng, lat]
-				address: address || null,
-			},
-			category,
-			severity,
-			department,
-		status: ComplaintStatus.PENDING,
-	})
+            userId: req.user._id.toString(),
+            description: description || "",
+            imageUrl,
+            location: {
+                type: "Point",
+                coordinates: [longitude, latitude],
+                address: address || null,
+            },
+            category,
+            severity,
+            department,
+            status: ComplaintStatus.PENDING,
+            imageVerification, 
+        })
 
 	logger.info(`Complaint created: ${complaint._id} by user: ${req.user.username}`)
 
-	const response: IComplaintResponse = {
-		_id: complaint._id.toString(),
-		userId: complaint.userId,
-		description: complaint.description,
-		imageUrl: complaint.imageUrl,
-		location: complaint.location,
-		category: complaint.category,
-		severity: complaint.severity,
-		department: complaint.department,
-		status: complaint.status,
-		createdAt: complaint.createdAt,
-		updatedAt: complaint.updatedAt,
-		resolvedAt: complaint.resolvedAt,
-	}
+	 const response: IComplaintResponse = {
+        _id: complaint._id.toString(),
+        userId: complaint.userId,
+        description: complaint.description,
+        imageUrl: complaint.imageUrl,
+        location: complaint.location,
+        category: complaint.category,
+        severity: complaint.severity,
+        department: complaint.department,
+        status: complaint.status,
+        createdAt: complaint.createdAt,
+        updatedAt: complaint.updatedAt,
+        resolvedAt: complaint.resolvedAt,
+        imageVerification: complaint.imageVerification,  
+    }
 
 	res.status(201).json({
 		status: "success",
@@ -232,6 +243,7 @@ export class ComplaintController {
 				createdAt: complaint.createdAt,
 				updatedAt: complaint.updatedAt,
 				resolvedAt: complaint.resolvedAt,
+				imageVerification:complaint.imageVerification
 			}
 
 			res.status(200).json({
@@ -291,6 +303,7 @@ export class ComplaintController {
 				createdAt: complaint.createdAt,
 				updatedAt: complaint.updatedAt,
 				resolvedAt: complaint.resolvedAt,
+				imageVerification:complaint.imageVerification
 			}
 
 			res.status(200).json({

@@ -6,6 +6,19 @@ import {
 	ComplaintStatus,
 } from "../constants/complaint.constants.js"
 
+export interface ImageVerificationData {
+  trustLevel: "high" | "medium" | "low";
+  hasExif: boolean;
+  hasGps: boolean;
+  locationSource: "exif" | "gps" | "manual";
+  hasTimestamp: boolean;
+  takenAt: string | null;
+  cameraMake: string | null;
+  cameraModel: string | null;
+  warnings: string[];
+}
+
+
 export interface IComplaint extends Document {
 	_id: Types.ObjectId
 	userId: string
@@ -23,6 +36,7 @@ export interface IComplaint extends Document {
 	createdAt: Date
 	updatedAt: Date
 	resolvedAt?: Date
+	imageVerification:ImageVerificationData
 }
 
 export interface IComplaintCreateInput {
@@ -56,4 +70,5 @@ export interface IComplaintResponse {
 	createdAt: Date
 	updatedAt: Date
 	resolvedAt?: Date
+	imageVerification:ImageVerificationData
 }

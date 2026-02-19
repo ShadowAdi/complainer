@@ -81,6 +81,25 @@ const ComplaintSchema = new Schema<IComplaint>(
             type: Date,
             default: null,
         },
+        imageVerification: {
+            trustLevel: {
+                type: String,
+                enum: ["high", "medium", "low"],
+                default: null,
+            },
+            hasExif: { type: Boolean, default: false },
+            hasGps: { type: Boolean, default: false },
+            locationSource: {
+                type: String,
+                enum: ["exif", "gps", "manual"],
+                default: null,
+            },
+            hasTimestamp: { type: Boolean, default: false },
+            takenAt: { type: Date, default: null },
+            cameraMake: { type: String, default: null },
+            cameraModel: { type: String, default: null },
+            warnings: { type: [String], default: [] },
+        },
     },
     {
         timestamps: true,
